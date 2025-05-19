@@ -13,6 +13,7 @@ permissions:
   contents: read
   id-token: write
   pull-requests: write
+  issues: write
 
 jobs:
   terraform:
@@ -49,7 +50,7 @@ jobs:
         if: github.event_name == 'pull_request'
         id: plan
         run: |
-          terraform plan -out=tfplan 
+          terraform plan -out=tfplan -no-color -input=false
           terraform show -json tfplan | tf-summarize -json > tfplan.json
           echo "plan_output=$(cat tfplan.json)" >> $GITHUB_ENV
 

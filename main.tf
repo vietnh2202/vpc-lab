@@ -9,13 +9,13 @@ terraform {
   backend "s3" {
     bucket       = "viet-terraform"
     key          = "vpc-lab/terraform.tfstate"
-    region       = "us-east-1"
+    region       = var.region
     use_lockfile = true
   }
 }
 
 provider "aws" {
-  region = "us-east-1"
+  region = var.region
 }
 
 # Create a VPC with public and private subnets
@@ -135,7 +135,7 @@ resource "aws_instance" "ecs_instance" {
   ami                  = "ami-0953476d60561c955"
   instance_type        = "t2.micro"
   subnet_id            = module.vpc.public_subnets[0]
-  security_groups      = [aws_security_group.ecs_sg.name]
+  vpc_security_group_ids = [aws_security_group.ecs_sg.id]
   iam_instance_profile = aws_iam_instance_profile.ecs_instance.name
   user_data            = <<EOF
 #!/bin/bash
