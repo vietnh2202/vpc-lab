@@ -55,8 +55,9 @@ jobs:
 
           terraform plan -out=tfplan -no-color -input=false
           terraform show -json tfplan | tf-summarize > tfplan_summary.md
-          sanitized_summary=$(cat tfplan_summary.md | sed 's/|/\\|/g')
-          echo "plan_output=${sanitized_summary}" >> $GITHUB_ENV
+          plan_output=$(cat tfplan_summary.md)
+          encoded_summary=$(echo "$plan_output" | base64)
+          echo "plan_output=${encoded_summary}" >> $GITHUB_ENV
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -68,10 +69,11 @@ jobs:
           script: |
             set -x
             const marker = "#### Terraform Plan Summary 📖";
+            const decodedOutput = Buffer.from(process.env.plan_output, 'base64').toString('utf8');
             const newComment = `${marker}
             <details><summary>Show Summary</summary>
             \`\`\`markdown
-            ${{ env.plan_output }}
+            ${decodedOutput}
             \`\`\`
             </details>
             *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Run: ${{ github.run_id }}*`;
@@ -106,7 +108,7 @@ jobs:
 
       - name: Terraform Apply
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: terraform apply tfplan -auto-approve
+        run: terraform apply -auto-approve
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -118,7 +120,7 @@ jobs:
           terraform destroy -auto-approve
 
       - name: Cleanup Terraform lock in S3 on cancellation
-        if: always() && cancelled()
+        if: always() && cancelled() || failure()
         run: |
           aws s3 rm s3://viet-terraform/vpc-lab/terraform.tfstate.tflock
           
