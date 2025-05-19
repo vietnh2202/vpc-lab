@@ -65,6 +65,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            set -x
             const marker = "#### Terraform Plan Summary 📖";
             const newComment = `${marker}
             <details><summary>Show Summary</summary>
