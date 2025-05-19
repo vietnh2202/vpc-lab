@@ -59,9 +59,19 @@ jobs:
           terraform plan -out=tfplan -no-color -input=false
           terraform show -json tfplan | tf-summarize -json > tfplan_summary.json
           jq empty tfplan_summary.json || exit 1
-          SUMMARY=$(jq . tfplan_summary.json)
+          FORMATTED_SUMMARY=$(jq '
+            def parse_json_string($str):
+              try ($str | fromjson) catch $str;
+            .changes[]?.attribute_changes? |=
+              with_entries(
+                if .value | type == "string" and (.value | try fromjson catch null != null)
+                then .value = parse_json_string(.value)
+                else .
+                end
+              )
+            | .' tfplan_summary.json)
           echo "SUMMARY<<EOF" >> $GITHUB_OUTPUT
-          echo "$SUMMARY" >> $GITHUB_OUTPUT
+          echo "$FORMATTED_SUMMARY" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
