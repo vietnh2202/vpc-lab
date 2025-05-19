@@ -72,7 +72,6 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            set -x
             const marker = "#### Terraform Plan Summary 📖";
             const decodedOutput = Buffer.from(process.env.plan_output, 'base64').toString('utf8');
             const newComment = `${marker}
