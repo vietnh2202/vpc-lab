@@ -68,11 +68,11 @@ jobs:
               then with_entries(.value |= parse_json_string)
               else .
               end
-            )' tfplan_summary.json) >> $GITHUB_OUTPUT
+            )' tfplan_summary.json) 
           
-          # echo "SUMMARY<<EOF" >> $GITHUB_OUTPUT
-          # echo "$SUMMARY" >> $GITHUB_OUTPUT
-          # echo "EOF" >> $GITHUB_OUTPUT
+          echo "SUMMARY<<EOF" >> $GITHUB_OUTPUT
+          echo "$SUMMARY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
