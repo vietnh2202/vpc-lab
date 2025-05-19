@@ -85,7 +85,7 @@ jobs:
             const issue_number = context.issue.number;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const body = `\`\`\`json\n${{ steps.plan.outputs.SUMMARY }}\n\`\`\``;
+            const body = `\`\`\`json\n${{ steps.plan.outputs.FORMATTED_SUMMARY }}\n\`\`\``;
             
             const { data: comments } = await github.rest.issues.listComments({
               owner,
