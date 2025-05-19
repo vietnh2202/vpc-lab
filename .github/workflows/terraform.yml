@@ -21,9 +21,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Install jq
-        run: sudo apt-get install -y jq
       
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4 
@@ -54,8 +51,8 @@ jobs:
         id: plan
         run: |
           terraform plan -out=tfplan -no-color -input=false
-          terraform show -json tfplan | tf-summarize -json > tfplan.json
-          echo "plan_output=$(jq -c . tfplan.json)" >> $GITHUB_ENV
+          terraform show -json tfplan > tfplan.json | tf-summarize tfplan.json > tfplan_summary.md
+          echo "plan_output=$(cat tfplan_summary.md)" >> $GITHUB_ENV
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -65,32 +62,46 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
-            const summary = JSON.parse(fs.readFileSync('tfplan.json', 'utf8'));
-            const output = `#### Terraform Plan Summary (via tf-summarize)\n\`\`\`json\n${JSON.stringify(summary, null, 2)}\n\`\`\``;
+            const marker = "#### Terraform Plan Summary 📖";
+            const newComment = `${marker}
+            <details><summary>Show Summary</summary>
+            \`\`\`markdown
+            ${{ env.plan_output }}
+            \`\`\`
+            </details>
+            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Run: ${{ github.run_id }}*`;
+
+            // Fetch existing comments
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
             });
-            const botComment = comments.find(comment => comment.body.includes('Terraform Plan Summary'));
-            if (botComment) {
-              await github.rest.issues.deleteComment({
+
+            // Find existing comment with the marker
+            const existingComment = comments.find(comment => comment.body.includes(marker));
+
+            if (existingComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                comment_id: botComment.id,
+                comment_id: existingComment.id,
+                body: newComment,
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: newComment,
               });
             }
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: output,
-            });
 
       - name: Terraform Apply
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: terraform apply -auto-approve
+        run: terraform apply tfplan -auto-approve
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
