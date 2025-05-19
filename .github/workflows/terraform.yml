@@ -59,7 +59,10 @@ jobs:
           terraform plan -out=tfplan -no-color -input=false
           terraform show -json tfplan | tf-summarize -json > tfplan_summary.json
           jq empty tfplan_summary.json || exit 1
-          echo "SUMMARY=$(jq -c . tfplan_summary.json)" >> $GITHUB_OUTPUT
+          SUMMARY=$(jq . tfplan_summary.json)
+          echo "SUMMARY<<EOF" >> $GITHUB_OUTPUT
+          echo "$SUMMARY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
