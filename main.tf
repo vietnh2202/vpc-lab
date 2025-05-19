@@ -132,12 +132,16 @@ resource "aws_ecs_cluster" "main" {
 }
 
 resource "aws_instance" "ecs_instance" {
-  ami                  = "ami-0953476d60561c955"
-  instance_type        = "t2.micro"
-  subnet_id            = module.vpc.public_subnets[0]
+  ami           = "ami-0953476d60561c955"
+  instance_type = "t2.micro"
+  metadata_options {
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
+  }
+  subnet_id              = module.vpc.public_subnets[0]
   vpc_security_group_ids = [aws_security_group.ecs_sg.id]
-  iam_instance_profile = aws_iam_instance_profile.ecs_instance.name
-  user_data            = <<EOF
+  iam_instance_profile   = aws_iam_instance_profile.ecs_instance.name
+  user_data              = <<EOF
 #!/bin/bash
 echo ECS_CLUSTER=${aws_ecs_cluster.main.name} >> /etc/ecs/ecs.config
 yum update -y
