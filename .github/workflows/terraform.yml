@@ -49,7 +49,10 @@ jobs:
       - name: Terraform Plan
         if: github.event_name == 'pull_request'
         id: plan
+        shell: bash
         run: |
+          set -x
+
           terraform plan -out=tfplan -no-color -input=false
           terraform show -json tfplan > tfplan.json | tf-summarize tfplan.json > tfplan_summary.md
           echo "plan_output=$(cat tfplan_summary.md)" >> $GITHUB_ENV
