@@ -57,7 +57,7 @@ jobs:
           set -x
 
           terraform plan -out=tfplan -no-color -input=false
-          terraform show -json tfplan | tf-summarize > tfplan_summary.md
+          terraform show -json tfplan | tf-summarize -md > tfplan_summary.md
           summary=$(cat tfplan_summary.md | jq -sR .)
           echo "SUMMARY=${summary}" >> $GITHUB_OUTPUT
         env:
