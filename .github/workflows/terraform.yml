@@ -93,7 +93,7 @@ jobs:
           terraform destroy -auto-approve
 
       - name: Cleanup Terraform lock in S3 on cancellation
-        if: cancelled()
+        if: always() && cancelled()
         run: |
           aws s3 rm s3://viet-terraform/vpc-lab/terraform.tfstate.tflock
           
