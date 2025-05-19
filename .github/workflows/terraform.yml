@@ -21,6 +21,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
       
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4 
@@ -52,7 +55,7 @@ jobs:
         run: |
           terraform plan -out=tfplan -no-color -input=false
           terraform show -json tfplan | tf-summarize -json > tfplan.json
-          echo "plan_output=$(cat tfplan.json)" >> $GITHUB_ENV
+          echo "plan_output=$(jq -c . tfplan.json)" >> $GITHUB_ENV
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
