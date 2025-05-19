@@ -28,6 +28,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
+      - name: Verify AWS Credentials
+        run: aws sts get-caller-identity
+
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -46,7 +49,7 @@ jobs:
         if: github.event_name == 'pull_request'
         id: plan
         run: |
-          terraform plan -out=tfplan
+          terraform plan -out=tfplan 
           terraform show -json tfplan | tf-summarize -json > tfplan.json
           echo "plan_output=$(cat tfplan.json)" >> $GITHUB_ENV
 
@@ -56,7 +59,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const summary = JSON.parse(fs.readFileSync('plan_summary.json', 'utf8'));
+            const summary = JSON.parse(fs.readFileSync('tfplan.json', 'utf8'));
             const output = `#### Terraform Plan Summary (via tf-summarize)\n\`\`\`json\n${JSON.stringify(summary, null, 2)}\n\`\`\``;
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
