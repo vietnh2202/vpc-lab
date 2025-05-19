@@ -59,8 +59,6 @@ jobs:
           terraform plan -out=tfplan -no-color -input=false
           terraform show -json tfplan | tf-summarize -json > tfplan_summary.json
           jq empty tfplan_summary.json || exit 1
-          echo "Raw tf-summarize output:"
-          cat tfplan_summary.json
 
           SUMMARY=$(jq '
             # Function to parse JSON strings
@@ -76,6 +74,10 @@ jobs:
               else .
               end
             )' tfplan_summary.json)
+
+          echo "Formatted Summary:"
+          echo "$SUMMARY"
+          
           echo "SUMMARY<<EOF" >> $GITHUB_OUTPUT
           echo "$SUMMARY" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
