@@ -55,7 +55,8 @@ jobs:
 
           terraform plan -out=tfplan -no-color -input=false
           terraform show -json tfplan | tf-summarize > tfplan_summary.md
-          echo "plan_output=$(cat tfplan_summary.md)" >> $GITHUB_ENV
+          sanitized_summary=$(cat tfplan_summary.md | sed 's/|/\\|/g')
+          echo "plan_output=${sanitized_summary}" >> $GITHUB_ENV
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
