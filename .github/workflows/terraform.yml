@@ -42,73 +42,24 @@ jobs:
 
       - name: Terraform Validate
         run: terraform validate
-      
-      - name: Setup tf-summarize
-        uses: kishaningithub/setup-tf-summarize@v2
 
       - name: Terraform Plan
         if: github.event_name == 'pull_request'
         id: plan
-        shell: bash
         run: |
-          terraform plan -out=tfplan -no-color -input=false
-          terraform show -json tfplan | tf-summarize -json > tfplan_summary.json
-          jq empty tfplan_summary.json || exit 1
-
-          SUMMARY=$(jq '
-            # Function to parse JSON strings
-            def parse_json_string:
-              if type == "string" and (try fromjson catch null != null)
-              then fromjson
-              else .
-              end;
-            # Recursively process all fields
-            walk(
-              if type == "object"
-              then with_entries(.value |= parse_json_string)
-              else .
-              end
-            )' tfplan_summary.json) 
-          
-          echo "SUMMARY<<EOF" >> $GITHUB_OUTPUT
-          echo "$SUMMARY" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          terraform plan -no-color -out=tfplan -input=false
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Upload Plan Summary
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+        uses: borchero/terraform-plan-comment@v2
         with:
-          script: |
-            const issue_number = context.issue.number;
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const body = `\`\`\`json\n${{ steps.plan.outputs.SUMMARY }}\n\`\`\``;
-            const { data: comments } = await github.rest.issues.listComments({
-              owner,
-              repo,
-              issue_number,
-            });
-            const botComment = comments.find(comment => 
-              comment.user.login === 'github-actions[bot]'
-            );
-            if (botComment) {
-              await github.rest.issues.updateComment({
-                owner,
-                repo,
-                comment_id: botComment.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number,
-                body,
-              });
-            }
+          token: ${{ secrets.GITHUB_TOKEN }}
+          plan_file: tfplan
+          header: "📝 Terraform Plan"
+          skip-empty: true
 
       - name: Terraform Apply
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
