@@ -57,7 +57,7 @@ jobs:
         uses: borchero/terraform-plan-comment@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          plan_file: tfplan
+          planfile: tfplan
           header: "📝 Terraform Plan"
           skip-empty: true
 
