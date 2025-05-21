@@ -155,6 +155,11 @@ resource "aws_launch_template" "ecs_instance" {
   image_id      = "ami-09f7b4e0bfd3103dd"
   instance_type = "t2.micro"
 
+  metadata_options {
+    http_tokens = "required"
+    http_put_response_hop_limit = 1
+  }
+
   network_interfaces {
     associate_public_ip_address = false
     security_groups             = [aws_security_group.ecs_sg.id]
